@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcript Downloader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5A7D9A;
+            --background-color: #F0F2F5;
+            --text-color: #333333;
+            --secondary-text-color: #666666;
+            --border-color: #D1D5DB;
+            --success-color: #4CAF50;
+            --warning-color: #FFA000;
+            --error-color: #E57373;
+            --card-background: #FFFFFF;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        h1, h2, h3 {
+            font-weight: 600;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+        }
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        .card {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #4A6D8A;
+        }
+        .flash {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .flash.error { background-color: var(--error-color); color: white; }
+        .flash.success { background-color: var(--success-color); color: white; }
+        .flash.warning { background-color: var(--warning-color); color: white; }
+        .flash.info { background-color: var(--primary-color); color: white; }
+        .video-list {
+            margin-top: 1rem;
+        }
+        .video-item {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .video-item h4 {
+            margin: 0 0 0.5rem 0;
+        }
+        .video-item p {
+            margin: 0 0 0.5rem 0;
+            color: var(--secondary-text-color);
+        }
+        .video-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        .video-item a:hover {
+            text-decoration: underline;
+        }
+        #check-now-button {
+            display: block;
+            width: 100%;
+            margin: 2rem 0;
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .button-group button {
+            flex: 1;
+        }
+        .remove-button {
+            background-color: var(--error-color);
+        }
+        .remove-button:hover {
+            background-color: #D32F2F;
+        }
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Transcript Downloader</h1>
+        
+        <div id="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <a href="{{ url_for('check_now') }}"><button id="check-now-button">Check All Channels Now</button></a>
+
+        <div class="card">
+            <h2>Add Channel</h2>
+            <form id="add-channel-form" action="{{ url_for('add_channel') }}" method="post">
+                <div class="form-group">
+                    <label for="channel_id">Channel URL or ID:</label>
+                    <input type="text" id="channel_id" name="channel_id" placeholder="Enter YouTube Channel URL or ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="check_interval">Check Interval (minutes):</label>
+                    <input type="number" id="check_interval" name="check_interval" min="1" value="60" required>
+                </div>
+                <div class="form-group">
+                    <label for="folder_id">Select Folder:</label>
+                    <select id="folder_id" name="folder_id" required>
+                        <option value="">Select a folder</option>
+                        {% for folder in folders %}
+                            <option value="{{ folder.id }}">{{ folder.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit">Add Channel</button>
+            </form>
+        </div>
+
+        <h2>Channels</h2>
+        <div id="channels-list">
+        {% for channel_id, channel_info in config['channels'].items() %}
+            <div class="card">
+                <h3>{{ channel_info['channel_name'] }} (ID: {{ channel_id }})</h3>
+                <form action="{{ url_for('update_channel') }}" method="post">
+                    <input type="hidden" name="channel_id" value="{{ channel_id }}">
+                    <div class="form-group">
+                        <label for="check_interval_{{ channel_id }}">Check Interval (minutes):</label>
+                        <input type="number" id="check_interval_{{ channel_id }}" name="check_interval" min="1" value="{{ channel_info['check_interval'] }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="folder_id_{{ channel_id }}">Select Folder:</label>
+                        <select id="folder_id_{{ channel_id }}" name="folder_id" required>
+                            {% for folder in folders %}
+                                <option value="{{ folder.id }}" {% if folder.id == channel_info['folder_id'] %}selected{% endif %}>
+                                    {{ folder.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit">Update</button>
+                        <a href="{{ url_for('remove_channel', channel_id=channel_id) }}"><button type="button" class="remove-button">Remove</button></a>
+                    </div>
+                </form>
+                <div class="video-list">
+                    <h4>Videos:</h4>
+                    {% for video in channel_info['videos'] %}
+                        <div class="video-item">
+                            <h4>{{ video['title'] }}</h4>
+                            <p>ID: {{ video['id'] }}</p>
+                            <p>Published: {{ video['published_at'] }}</p>
+                            <a href="https://docs.google.com/document/d/{{ video['transcript_doc_id'] }}/edit" target="_blank" rel="noopener noreferrer">View Transcript on Google Docs</a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Processing... Please wait.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('add-channel-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('loading').style.display = 'flex';
+            
+            var formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                var flashMessages = document.getElementById('flash-messages');
+                flashMessages.innerHTML = `<div class="flash ${data.success ? 'success' : 'error'}">${data.message}</div>`;
+                
+                if (data.success) {
+                    // Refresh the page to show the new channel
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                console.error('Error:', error);
+                var flashMessages = document.getElementById('flash-messages');
+                flashMessages.innerHTML = '<div class="flash error">An error occurred. Please try again.</div>';
+            });
+        });
+
+        // Add smooth scrolling to all links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add fade-in animation to cards
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.card').forEach(card => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
