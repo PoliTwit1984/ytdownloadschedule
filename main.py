@@ -433,8 +433,16 @@ def run_schedule():
         schedule.run_pending()
         time.sleep(1)
 
+# if __name__ == "__main__":
+#     schedule_jobs()
+#     schedule_thread = Thread(target=run_schedule)
+#     schedule_thread.start()
+#     app.run(debug=True, use_reloader=False)
+
 if __name__ == "__main__":
     schedule_jobs()
     schedule_thread = Thread(target=run_schedule)
     schedule_thread.start()
-    app.run(debug=True, use_reloader=False)
+    port = int(os.environ.get('PORT', 8888))
+    debug_mode = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode, use_reloader=False)
